@@ -1,8 +1,8 @@
 {
-  "at": "2026-08-30T05:10:06.276Z",
+  "at": "2026-09-02T18:14:38.984Z",
   "arch": "amd64",
   "versions": {
-    "php": "8.5.9",
+    "php": "8.5.10",
     "nginx": "1.30.4",
     "mariadb": "12.3.3",
     "memcached": "1.6.38",
@@ -12,14 +12,14 @@
     "nginx": "1.30.4-1~trixie",
     "mariadb-server": "1:12.3.3+maria~deb13",
     "memcached": "1.6.38-1",
-    "php8.5-fpm": "8.5.9-1+0~20260730.22+debian13~1.gbp617955"
+    "php8.5-fpm": "8.5.10-1+0~20260828.25+debian13~1.gbpfea0b8"
   },
   "configShapes": {
     "nginx.conf": "243d289c8a25e4b9",
     "security-headers": "68358062d2014f16",
     "php.ini": "cf0b2d727502481e",
     "mariadb.cnf": "5fba057a0452809d",
-    "supervisor": "26db2506dbdcd6bd",
+    "supervisor": "cf31c4a4d5982112",
     "caddy/coraza-base": "dc34d3369e980e5a",
     "caddy/crs-setup": "6aaf7ec030a12ca9",
     "caddy/caddyfile": "eb3277796446ff50",
@@ -50,7 +50,7 @@
       "vetted": true,
       "steps": {
         "goodBefore": "pass: 2/2 个站点全部通过（实测）",
-        "broken": "fail: 2 失败 / 0 通过 / 0 判不了，共 2 个站点 —— 失败: alpha: X-Powered-By: PHP/8.5.9 | beta: X-Powered-By: PHP/8.5.9",
+        "broken": "fail: 2 失败 / 0 通过 / 0 判不了，共 2 个站点 —— 失败: alpha: X-Powered-By: PHP/8.5.10 | beta: X-Powered-By: PHP/8.5.10",
         "goodAfter": "pass: 2/2 个站点全部通过（实测）"
       },
       "permalink": "pretty"
