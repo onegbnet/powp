@@ -1,0 +1,433 @@
+{
+  "at": "2026-09-02T18:14:38.984Z",
+  "arch": "amd64",
+  "versions": {
+    "php": "8.5.10",
+    "nginx": "1.30.4",
+    "mariadb": "12.3.3",
+    "memcached": "1.6.38",
+    "caddy": "2.11.4"
+  },
+  "pkgVersions": {
+    "nginx": "1.30.4-1~trixie",
+    "mariadb-server": "1:12.3.3+maria~deb13",
+    "memcached": "1.6.38-1",
+    "php8.5-fpm": "8.5.10-1+0~20260828.25+debian13~1.gbpfea0b8"
+  },
+  "configShapes": {
+    "nginx.conf": "243d289c8a25e4b9",
+    "security-headers": "68358062d2014f16",
+    "php.ini": "cf0b2d727502481e",
+    "mariadb.cnf": "5fba057a0452809d",
+    "supervisor": "cf31c4a4d5982112",
+    "caddy/coraza-base": "dc34d3369e980e5a",
+    "caddy/crs-setup": "6aaf7ec030a12ca9",
+    "caddy/caddyfile": "eb3277796446ff50",
+    "site-vhost": "868e65e3be42d36f",
+    "site-pool": "7f363c42fca49154",
+    "sp-rules": "0ee86fe68c169979",
+    "sp-probe": "4fd5d27ccc1e54fc",
+    "nf-probe": "8238e0c172c294c7",
+    "yara-selftest": "1beb4430b04f5a5c",
+    "mu-hardening": "3ee28c0b87796910"
+  },
+  "wordpress": [
+    "7.1"
+  ],
+  "siteParams": {
+    "permalink": [
+      "plain",
+      "pretty"
+    ],
+    "scheme": [
+      "http"
+    ]
+  },
+  "vets": [
+    {
+      "check": "php-expose",
+      "why": "expose_php 关掉之后，PHP 是否真的不再发 X-Powered-By",
+      "vetted": true,
+      "steps": {
+        "goodBefore": "pass: 2/2 个站点全部通过（实测）",
+        "broken": "fail: 2 失败 / 0 通过 / 0 判不了，共 2 个站点 —— 失败: alpha: X-Powered-By: PHP/8.5.10 | beta: X-Powered-By: PHP/8.5.10",
+        "goodAfter": "pass: 2/2 个站点全部通过（实测）"
+      },
+      "permalink": "pretty"
+    },
+    {
+      "check": "nginx-server-tokens",
+      "why": "server_tokens off 之后，nginx 是否真的不再在 Server 头带版本号",
+      "vetted": true,
+      "steps": {
+        "goodBefore": "pass: 2/2 个站点全部通过（实测）",
+        "broken": "fail: 2 失败 / 0 通过 / 0 判不了，共 2 个站点 —— 失败: alpha: Server: nginx/1.30.4 | beta: Server: nginx/1.30.4",
+        "goodAfter": "pass: 2/2 个站点全部通过（实测）"
+      },
+      "permalink": "pretty"
+    },
+    {
+      "check": "nginx-deny-sensitive",
+      "why": "vhost 里的 deny 规则是否真的让 nginx 拒绝那些路径",
+      "vetted": true,
+      "steps": {
+        "goodBefore": "pass: 2/2 个站点全部通过（实测）",
+        "broken": "fail: 1 失败 / 1 通过 / 0 判不了，共 2 个站点 —— 失败: alpha: 未被拒 /xmlrpc.php→200,/readme.html→200,/license.txt→200,/wp-content/uploads/x.php→200,/wp-content/uploads/x.phtml→200",
+        "goodAfter": "pass: 2/2 个站点全部通过（实测）"
+      },
+      "permalink": "pretty"
+    },
+    {
+      "check": "nginx-headers-static",
+      "why": "静态资源 location 里的 include 是否真的让 nginx 发出安全头",
+      "vetted": true,
+      "steps": {
+        "goodBefore": "pass: 2/2 个站点全部通过（实测）",
+        "broken": "fail: 1 失败 / 1 通过 / 0 判不了，共 2 个站点 —— 失败: alpha: 缺 x-content-type-options,x-frame-options,referrer-policy（HTTP 200）",
+        "goodAfter": "pass: 2/2 个站点全部通过（实测）"
+      },
+      "permalink": "pretty"
+    },
+    {
+      "check": "mc-no-enumeration",
+      "why": "加固开关全部拿掉之后，memcached 是否真的重新允许全量枚举",
+      "vetted": true,
+      "steps": {
+        "goodBefore": "pass: metadump / cachedump / watch 三条枚举路径均被拒绝（实测）",
+        "broken": "fail: 以下枚举路径当前是开的: metadump、cachedump、watch——不知道 key 名也能捞到全部租户的缓存内容",
+        "goodAfter": "pass: metadump / cachedump / watch 三条枚举路径均被拒绝（实测）"
+      },
+      "permalink": "pretty"
+    },
+    {
+      "check": "mc-no-enumeration",
+      "why": "只删 -X（cachedump 单独放开）时，这条检查是否会翻",
+      "vetted": true,
+      "steps": {
+        "goodBefore": "pass: metadump / cachedump / watch 三条枚举路径均被拒绝（实测）",
+        "broken": "fail: 以下枚举路径当前是开的: cachedump——不知道 key 名也能捞到全部租户的缓存内容",
+        "goodAfter": "pass: metadump / cachedump / watch 三条枚举路径均被拒绝（实测）"
+      },
+      "permalink": "pretty"
+    },
+    {
+      "check": "mc-no-enumeration",
+      "why": "只删 -W（watch 单独放开）时，这条检查是否会翻",
+      "vetted": true,
+      "steps": {
+        "goodBefore": "pass: metadump / cachedump / watch 三条枚举路径均被拒绝（实测）",
+        "broken": "fail: 以下枚举路径当前是开的: watch——不知道 key 名也能捞到全部租户的缓存内容",
+        "goodAfter": "pass: metadump / cachedump / watch 三条枚举路径均被拒绝（实测）"
+      },
+      "permalink": "pretty"
+    },
+    {
+      "check": "mc-no-flush-all",
+      "why": "-F 拿掉之后，memcached 自报的 flush_enabled 是否真的变回 yes",
+      "vetted": true,
+      "steps": {
+        "goodBefore": "pass: stats settings: flush_enabled = no",
+        "broken": "fail: stats settings: flush_enabled = yes——任一站点可清空全部租户的缓存",
+        "goodAfter": "pass: stats settings: flush_enabled = no"
+      },
+      "permalink": "pretty"
+    },
+    {
+      "check": "mc-key-prefix-opaque",
+      "why": "只删 -X 之后，stats detail 是否真的重新可用（那一刻 stats detail dump 就能问出随机盐）",
+      "vetted": true,
+      "steps": {
+        "goodBefore": "pass: stats detail 被拒绝（-X）——问不出任何站点的缓存命名空间（含随机盐）",
+        "broken": "fail: stats detail 当前可用——stats detail dump 能问出各站点的缓存命名空间（含 16 位随机盐）",
+        "goodAfter": "pass: stats detail 被拒绝（-X）——问不出任何站点的缓存命名空间（含随机盐）"
+      },
+      "permalink": "pretty"
+    },
+    {
+      "check": "mc-memlimit-intact",
+      "why": "有人发过 cache_memlimit 之后，这条检查是否真的看得见（这是检测项，打坏动作就是那条攻击命令本身）",
+      "vetted": true,
+      "steps": {
+        "goodBefore": "pass: stats settings: maxbytes = 268435456（= MEMCACHED_MEMORY 256MB）",
+        "broken": "fail: stats settings: maxbytes = 8388608，小于配置的 268435456（256MB）——有人发过 cache_memlimit，全部租户的可用缓存被压小了",
+        "goodAfter": "pass: stats settings: maxbytes = 268435456（= MEMCACHED_MEMORY 256MB）"
+      },
+      "permalink": "pretty"
+    },
+    {
+      "check": "mc-loopback-only",
+      "why": "-l 改成 0.0.0.0 之后，memcached 自报的监听地址是否真的跟着变",
+      "vetted": true,
+      "steps": {
+        "goodBefore": "pass: stats settings: inter = 127.0.0.1（全部是回环地址）",
+        "broken": "fail: stats settings: inter = 0.0.0.0——0.0.0.0 不是回环地址",
+        "goodAfter": "pass: stats settings: inter = 127.0.0.1（全部是回环地址）"
+      },
+      "permalink": "pretty"
+    },
+    {
+      "check": "wp-rest-users",
+      "why": "mu-plugin 的 permission_callback 包装在这个 WP 版本上是否仍然生效",
+      "vetted": true,
+      "steps": {
+        "goodBefore": "pass: 2/2 个站点全部通过（实测）",
+        "broken": "fail: 1 失败 / 1 通过 / 0 判不了，共 2 个站点 —— 失败: alpha: 匿名 200 且响应体含用户清单",
+        "goodAfter": "pass: 2/2 个站点全部通过（实测）"
+      },
+      "permalink": "pretty"
+    },
+    {
+      "check": "wp-author-enum",
+      "why": "?author= 拦截钩子在这个 WP 版本上是否仍然生效",
+      "vetted": true,
+      "steps": {
+        "goodBefore": "pass: 2/2 个站点全部通过（实测）",
+        "broken": "fail: 1 失败 / 1 通过 / 0 判不了，共 2 个站点 —— 失败: alpha: 301 → http://127.0.0.1:8001/author/admin/（用户名泄露）",
+        "goodAfter": "pass: 2/2 个站点全部通过（实测）"
+      },
+      "permalink": "pretty"
+    },
+    {
+      "check": "wp-generator",
+      "why": "generator 移除钩子在这个 WP 版本上是否仍然生效",
+      "vetted": true,
+      "steps": {
+        "goodBefore": "pass: 2/2 个站点全部通过（实测）",
+        "broken": "fail: 1 失败 / 1 通过 / 0 判不了，共 2 个站点 —— 失败: alpha: 首页含 <meta name=\"generator\">",
+        "goodAfter": "pass: 2/2 个站点全部通过（实测）"
+      },
+      "permalink": "pretty"
+    },
+    {
+      "check": "wp-author-sitemap",
+      "why": "作者 sitemap 的 provider 移除在这个 WP 版本上是否仍然生效",
+      "vetted": true,
+      "steps": {
+        "goodBefore": "pass: 2/2 个站点全部通过（实测）",
+        "broken": "fail: 1 失败 / 1 通过 / 0 判不了，共 2 个站点 —— 失败: alpha: sitemap 索引里仍列着作者 sitemap",
+        "goodAfter": "pass: 2/2 个站点全部通过（实测）"
+      },
+      "permalink": "pretty"
+    },
+    {
+      "check": "wp-author-archive",
+      "why": "按登录名直访作者归档的拦截在这个 WP 版本上是否仍然生效",
+      "vetted": true,
+      "steps": {
+        "goodBefore": "pass: 2/2 个站点全部通过（实测）",
+        "broken": "fail: 1 失败 / 1 通过 / 0 判不了，共 2 个站点 —— 失败: alpha: /?author_name=%3C%E7%99%BB%E5%BD%95%E5%90%8D%3E 回 200、同形的不存在名字回 404 —— 状态码本身就是一台用户名探测器",
+        "goodAfter": "pass: 2/2 个站点全部通过（实测）"
+      },
+      "permalink": "pretty"
+    },
+    {
+      "check": "wp-lostpassword",
+      "why": "找回密码表单的应答归一在这个 WP 版本上是否仍然生效",
+      "vetted": true,
+      "steps": {
+        "goodBefore": "pass: 2/2 个站点全部通过（实测）",
+        "broken": "fail: 1 失败 / 1 通过 / 0 判不了，共 2 个站点 —— 失败: alpha: 不存在的名字得到 200 错误页（成功那条是 302 到 checkemail=confirm） —— 找回密码表单是一台账号存在性探测器",
+        "goodAfter": "pass: 2/2 个站点全部通过（实测）"
+      },
+      "permalink": "pretty"
+    },
+    {
+      "check": "wp-oembed-author",
+      "why": "oEmbed 应答里的作者身份遮蔽在这个 WP 版本上是否仍然生效",
+      "vetted": true,
+      "steps": {
+        "goodBefore": "pass: 2/2 个站点全部通过（实测）",
+        "broken": "fail: 1 失败 / 1 通过 / 0 判不了，共 2 个站点 —— 失败: alpha: oEmbed 的 author_name 就是登录名",
+        "goodAfter": "pass: 2/2 个站点全部通过（实测）"
+      },
+      "permalink": "pretty"
+    },
+    {
+      "check": "wp-oembed-author",
+      "why": "有东西把登录名塞回 author_url 时（author_name 的遮蔽原样留着）判据是否看得见",
+      "vetted": true,
+      "steps": {
+        "goodBefore": "pass: 2/2 个站点全部通过（实测）",
+        "broken": "fail: 1 失败 / 1 通过 / 0 判不了，共 2 个站点 —— 失败: alpha: oEmbed 的 author_url 带着登录名",
+        "goodAfter": "pass: 2/2 个站点全部通过（实测）"
+      },
+      "permalink": "pretty"
+    },
+    {
+      "check": "php-sp-include-guard",
+      "why": "规则文件被清空（模块照常加载）之后，include 是否真的重新被放行",
+      "vetted": true,
+      "steps": {
+        "goodBefore": "pass: 2/2 个站点全部通过（实测）",
+        "broken": "fail: 2 失败 / 0 通过 / 0 判不了，共 2 个站点 —— 失败: alpha: include 未被拦: jpg=扩展名白名单, phar=phar:// 前置拦截 | beta: include 未被拦: jpg=扩展名白名单, phar=phar:// 前置拦截 —— 诊断: 模块已加载；规则文件是空的",
+        "goodAfter": "pass: 2/2 个站点全部通过（实测）"
+      },
+      "permalink": "pretty"
+    },
+    {
+      "check": "php-sp-include-guard",
+      "why": "扩展整个不加载（PHP 大版本升级后的 fail-OPEN 形态）之后，检查是否会翻",
+      "vetted": true,
+      "steps": {
+        "goodBefore": "pass: 2/2 个站点全部通过（实测）",
+        "broken": "fail: 2 失败 / 0 通过 / 0 判不了，共 2 个站点 —— 失败: alpha: include 未被拦: jpg=扩展名白名单, phar=phar:// 前置拦截 | beta: include 未被拦: jpg=扩展名白名单, phar=phar:// 前置拦截 —— 诊断: 模块不在 PHP-FPM 模块列表里（未装或 ABI 不匹配）",
+        "goodAfter": "pass: 2/2 个站点全部通过（实测）"
+      },
+      "permalink": "pretty"
+    },
+    {
+      "check": "php-sp-include-guard",
+      "why": "只删 phar:// 拦截（扩展名白名单仍在）时，这条检查是否会翻",
+      "vetted": true,
+      "steps": {
+        "goodBefore": "pass: 2/2 个站点全部通过（实测）",
+        "broken": "fail: 2 失败 / 0 通过 / 0 判不了，共 2 个站点 —— 失败: alpha: include 未被拦: phar=phar:// 前置拦截 | beta: include 未被拦: phar=phar:// 前置拦截 —— 诊断: 模块已加载",
+        "goodAfter": "pass: 2/2 个站点全部通过（实测）"
+      },
+      "permalink": "pretty"
+    },
+    {
+      "check": "db-server-audit",
+      "why": "日志文件被搬走（插件握着旧 fd）之后，刚发的那条 DDL 是否真的找不到了",
+      "vetted": true,
+      "steps": {
+        "goodBefore": "pass: SERVER_AUDIT ACTIVE，且刚发的 DDL 实测出现在 /data/panel/logs/mariadb-audit.log",
+        "broken": "fail: 插件 ACTIVE，但**刚发的那条 DDL 没有出现在 /data/panel/logs/mariadb-audit.log 里**——它开着却没在记（路径写错 / 目录不可写 / 日志文件被外部删掉后 fd 失效）",
+        "goodAfter": "pass: SERVER_AUDIT ACTIVE，且刚发的 DDL 实测出现在 /data/panel/logs/mariadb-audit.log"
+      },
+      "permalink": "pretty"
+    },
+    {
+      "check": "db-sql-errlog",
+      "why": "sql_errlog 卸载之后，刚发的那条错误 SQL 是否真的不再出现在日志里",
+      "vetted": true,
+      "steps": {
+        "goodBefore": "pass: SQL_ERROR_LOG ACTIVE，且刚发的错误 SQL 实测出现在 /data/panel/logs/mariadb-sql-errors.log",
+        "broken": "fail: SQL_ERROR_LOG 插件未加载（information_schema 里查无此项）",
+        "goodAfter": "pass: SQL_ERROR_LOG ACTIVE，且刚发的错误 SQL 实测出现在 /data/panel/logs/mariadb-sql-errors.log"
+      },
+      "permalink": "pretty"
+    },
+    {
+      "check": "wp-yara-scan",
+      "why": "规则集被换成认不出任何东西的那一份之后，检查是否会翻",
+      "vetted": true,
+      "steps": {
+        "goodBefore": "pass: 自检样本被正确认出，对照样本未命中；2 个站点扫描无命中",
+        "broken": "fail: **自检样本没被认出来**——引擎或规则集没在匹配（规则被清空 / 编译坏了 / 换错了文件）。这一轮站点扫描\"没命中\"因此什么都证明不了",
+        "goodAfter": "pass: 自检样本被正确认出，对照样本未命中；2 个站点扫描无命中"
+      },
+      "permalink": "pretty"
+    },
+    {
+      "check": "php-runtime-limits",
+      "why": "ffi.enable 打开之后，站点自己的 worker 是否真的拿得到 FFI",
+      "vetted": true,
+      "steps": {
+        "goodBefore": "pass: 2/2 个站点全部通过（实测）",
+        "broken": "fail: 2 失败 / 0 通过 / 0 判不了，共 2 个站点 —— 失败: alpha: FFI 可用（任意原生代码执行） | beta: FFI 可用（任意原生代码执行）",
+        "goodAfter": "pass: 2/2 个站点全部通过（实测）"
+      },
+      "permalink": "pretty"
+    },
+    {
+      "check": "php-runtime-limits",
+      "why": "allow_url_fopen/allow_url_include 打开之后，远程 URL 是否真的进得了 include",
+      "vetted": true,
+      "steps": {
+        "goodBefore": "pass: 2/2 个站点全部通过（实测）",
+        "broken": "fail: 2 失败 / 0 通过 / 0 判不了，共 2 个站点 —— 失败: alpha: allow_url_include 开着（include 可以直接吃远程 URL） | beta: allow_url_include 开着（include 可以直接吃远程 URL）",
+        "goodAfter": "pass: 2/2 个站点全部通过（实测）"
+      },
+      "permalink": "pretty"
+    },
+    {
+      "check": "php-runtime-limits",
+      "why": "会话目录退回全站共享的那个之后，检查是否会翻",
+      "vetted": true,
+      "steps": {
+        "goodBefore": "pass: 2/2 个站点全部通过（实测）",
+        "broken": "fail: 1 失败 / 1 通过 / 0 判不了，共 2 个站点 —— 失败: alpha: session.save_path = /var/lib/php/sessions，应为本站专属的 /data/panel/sessions/<站点>",
+        "goodAfter": "pass: 2/2 个站点全部通过（实测）"
+      },
+      "permalink": "pretty"
+    },
+    {
+      "check": "php-runtime-limits",
+      "why": "opcache.restrict_api 一删，站点自己的 worker 是否真的能调 opcache API",
+      "vetted": true,
+      "steps": {
+        "goodBefore": "pass: 2/2 个站点全部通过（实测）",
+        "broken": "fail: 2 失败 / 0 通过 / 0 判不了，共 2 个站点 —— 失败: alpha: opcache API 未受限（任一租户可清空整机 opcache） | beta: opcache API 未受限（任一租户可清空整机 opcache）",
+        "goodAfter": "pass: 2/2 个站点全部通过（实测）"
+      },
+      "permalink": "pretty"
+    },
+    {
+      "check": "php-cross-site-isolation",
+      "why": "open_basedir 放开之后，A 站的 PHP 是否真的读得到 B 站的 wp-config.php",
+      "vetted": true,
+      "steps": {
+        "goodBefore": "pass: 2/2 个站点全部通过（实测）",
+        "broken": "fail: 1 失败 / 1 通过 / 0 判不了，共 2 个站点 —— 失败: alpha: 读得到这些站点的 wp-config.php: beta（凭据可被直接取走）",
+        "goodAfter": "pass: 2/2 个站点全部通过（实测）"
+      },
+      "permalink": "pretty"
+    },
+    {
+      "check": "wp-ninjafirewall",
+      "why": "pool 的 auto_prepend_file 一删，Full WAF 是否真的不再过滤请求体",
+      "vetted": true,
+      "steps": {
+        "goodBefore": "pass: 2/2 个站点全部通过（实测）",
+        "broken": "fail: 1 失败 / 1 通过 / 0 判不了，共 2 个站点 —— 失败: alpha: 请求体未被过滤: SQL 注入、XSS（Full WAF 没在生效）",
+        "goodAfter": "pass: 2/2 个站点全部通过（实测）"
+      },
+      "permalink": "pretty"
+    },
+    {
+      "check": "wp-ninjafirewall",
+      "why": "插件被停用之后，请求体过滤是否真的停了",
+      "vetted": true,
+      "steps": {
+        "goodBefore": "pass: 2/2 个站点全部通过（实测）",
+        "broken": "fail: 1 失败 / 1 通过 / 0 判不了，共 2 个站点 —— 失败: alpha: 请求体未被过滤: SQL 注入、XSS（Full WAF 没在生效）",
+        "goodAfter": "pass: 2/2 个站点全部通过（实测）"
+      },
+      "permalink": "pretty"
+    },
+    {
+      "check": "waf-caddy",
+      "why": "引擎降级成 DetectionOnly 之后，攻击是否真的不再被拦（A/B 半会不会翻）",
+      "vetted": true,
+      "steps": {
+        "goodBefore": "pass: caddy 2.11.4 + CRS 4.28.0：攻击五路（查询串/JSON body/User-Agent/Cookie/双重编码）均 403，区块编辑器保存放行（404）",
+        "broken": "fail: 查询串 SQLi 未被拦（404） | JSON body SQLi 未被拦（404）—— 请求体可能根本没被解析 | User-Agent 里的 SQLi 未被拦（404）—— 请求头不在检查面内了 | Cookie 里的 SQLi 未被拦（404）—— Cookie 不在检查面内了 | 双重编码 SQLi 未被拦（404）—— 多轮解码归一化可能坏了（coraza 二进制回归？）",
+        "goodAfter": "pass: caddy 2.11.4 + CRS 4.28.0：攻击五路（查询串/JSON body/User-Agent/Cookie/双重编码）均 403，区块编辑器保存放行（404）"
+      },
+      "permalink": "pretty"
+    },
+    {
+      "check": "waf-caddy",
+      "why": "请求头/Cookie 的目标清单被摘掉之后，那一路是否真的开始漏（D/E 肢会不会翻）",
+      "vetted": true,
+      "steps": {
+        "goodBefore": "pass: caddy 2.11.4 + CRS 4.28.0：攻击五路（查询串/JSON body/User-Agent/Cookie/双重编码）均 403，区块编辑器保存放行（404）",
+        "broken": "fail: User-Agent 里的 SQLi 未被拦（404）—— 请求头不在检查面内了 | Cookie 里的 SQLi 未被拦（404）—— Cookie 不在检查面内了",
+        "goodAfter": "pass: caddy 2.11.4 + CRS 4.28.0：攻击五路（查询串/JSON body/User-Agent/Cookie/双重编码）均 403，区块编辑器保存放行（404）"
+      },
+      "permalink": "pretty"
+    },
+    {
+      "check": "waf-caddy",
+      "why": "WordPress 例外插件被移走之后，区块编辑器的保存是否真的开始被误拦（C 半会不会翻）",
+      "vetted": true,
+      "steps": {
+        "goodBefore": "pass: caddy 2.11.4 + CRS 4.28.0：攻击五路（查询串/JSON body/User-Agent/Cookie/双重编码）均 403，区块编辑器保存放行（404）",
+        "broken": "fail: 区块编辑器的保存被误拦（403）—— 站点将无法发文，查 CRS 调优集与 WordPress 例外插件是否在位",
+        "goodAfter": "pass: caddy 2.11.4 + CRS 4.28.0：攻击五路（查询串/JSON body/User-Agent/Cookie/双重编码）均 403，区块编辑器保存放行（404）"
+      },
+      "permalink": "pretty"
+    }
+  ]
+}
