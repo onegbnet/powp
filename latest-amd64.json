@@ -1,15 +1,15 @@
 {
-  "at": "2026-09-02T18:14:38.984Z",
+  "at": "2026-09-15T18:13:05.368Z",
   "arch": "amd64",
   "versions": {
     "php": "8.5.10",
-    "nginx": "1.30.4",
+    "nginx": "1.30.5",
     "mariadb": "12.3.3",
     "memcached": "1.6.38",
     "caddy": "2.11.4"
   },
   "pkgVersions": {
-    "nginx": "1.30.4-1~trixie",
+    "nginx": "1.30.5-1~trixie",
     "mariadb-server": "1:12.3.3+maria~deb13",
     "memcached": "1.6.38-1",
     "php8.5-fpm": "8.5.10-1+0~20260828.25+debian13~1.gbpfea0b8"
